@@ -36,6 +36,8 @@
             - Options   (HashTable)         passed to gem
             - Version   (String)            passed to gem as --version
             - Force     (Switch)            passed to gem as --force
+        VsCode
+            - none
 
 .EXAMPLE
     Install-Dependencies -Tags build, runtime
@@ -46,13 +48,12 @@
     Install-Dependencies -Tags { build -and runtime }
 
     Look into packages.ps1 in the current dir to get the HashTable. Select only those packages
-    that contain tag 'buld' AND tag 'runtime'.
-
+    that contain tag 'buld' AND tag 'runtime'
 #>
 function Install-Dependencies {
     param(
         # Package description
-        [HashTable] $Packages,
+        [System.Collections.Specialized.OrderedDictionary] $Packages,
         
         # String[] or ScriptBlock
         #  - String[]:      Install only packages that contain at least 1 of the tags in the list
@@ -60,7 +61,7 @@ function Install-Dependencies {
         $Tags, 
 
         # Install only packages that match provided names
-        [string[]]  $Names
+        [string[]] $Names
     ) 
     
     function chocolatey( [HashTable] $pkg ) {
@@ -89,8 +90,6 @@ function Install-Dependencies {
         Write-Host "choco.exe $params"
         & choco.exe $params
         if ($LASTEXITCODE) { throw "Failed to install dependency '$name' - exit code $LastExitCode"}
-
-        $installed = $true
     }
 
     function psgallery( [HashTable] $pkg ) {
@@ -109,8 +108,6 @@ function Install-Dependencies {
         if ($Env:HTTP_PROXY) { $params.Proxy = $Env:HTTP_PROXY } 
         $params = $pkg.Options
         Install-Module $name @params 
-
-        $installed = $true
     }
 
     function windows( [HashTable] $pkg ) {
@@ -123,8 +120,6 @@ function Install-Dependencies {
         Write-Host "Installing dependency: $name" -ForegroundColor yellow
         $params = $pkg.Options
         Install-WindowsFeature -Name $name @params -Verbose
-
-        $installed = $true
     }
 
     function rubygems( [HashTable] $pkg) {
@@ -181,12 +176,28 @@ function Install-Dependencies {
         if ( $pkg.Script -isnot [ScriptBlock] ) { $pkg.Script = [ScriptBlock]::Create($pkg.Script) }
         $options = $pkg.Options
         & $pkg.Script @options
+    }
 
-        $installed = $true
+    function vscode( [HashTable] $pkg ) {
+
+        if (!$script:vscode_list) { 
+            Write-Verbose 'Get local chocolatey packages'
+            $script:vscode_list = code --list-extensions --show-versions
+        }
+        
+        $name = $pkg.Name
+        $p = $script:vscode_list -like "$name@*"
+        if ($p) { 
+            "Already installed: $($p.Replace('@', '|'))"
+            return
+        }
+
+        Write-Host "Installing dependency: $name" -ForegroundColor yellow
+        code --install-extension $name
     }
 
     function is_tagged( $Pkg ) {
-        if ($Tags -is [array]) {
+        if ($Tags -is [array] -or $Tags -is [string]) {
             if ($Tags -and !(Compare-Object $Pkg.Tags $Tags -IncludeEqual | ? SideIndicator -eq '==')) { return $false }
             return $true
         }
@@ -194,15 +205,17 @@ function Install-Dependencies {
         if ($Tags -is [ScriptBlock]) {     
             if (!$script:Tag_Expression) {
                 $script:Tag_Expression = $Tags
-                $Tags -split '\(|\)| ' | ? {$_} | % { if (!$_.StartsWith('-')) {  $script:Tag_Expression = $script:Tag_Expression -replace "\b$_\b", "`$t_$_" } }
+                $Tags -split '\(|\)| |!' | ? {$_} | % { if (!$_.StartsWith('-')) {  
+                    $script:Tag_Expression = $script:Tag_Expression -replace "\b$_\b", "`$t_$_" } 
+                }
             }
             $Pkg.Tags | % { Set-Variable "t_$_" $true }
             return iex $script:Tag_Expression
         }
     }
 
-    $repos = 'Chocolatey', 'PSGallery', 'Windows', 'Script', 'RubyGems', 'Pip'
-    $script:chocolatey_list = $null
+    $repos = 'Chocolatey', 'PSGallery', 'Windows', 'Script', 'RubyGems', 'Pip', 'VsCode'
+    $script:chocolatey_list = $script:pip_list = $script:vscode_list = $script:Tag_Expression = $null
     
     if (!$Packages) {
         if (Test-Path packages.ps1) { $Packages = & .\packages.ps1 }
@@ -234,17 +247,15 @@ function Install-Dependencies {
     if ($Env:HTTP_PROXY) {  Write-Host  "Proxy:" $Env:HTTP_PROXY -ForegroundColor green }
     Write-Host "Tags: $Tags    Packages: $($filtered_packages.Keys)`n" -ForegroundColor green
     
-    $installed = $false
     foreach( $pkg in $filtered_packages.GetEnumerator() ) { 
         $pkg = $pkg.Value 
-        $b = if ( $pkg.Test ) { $pkg.Test | iex } else { $false }        
-        if (!$b) { 
+        $b = if ( $pkg.Test ) { $pkg.Test | iex } else { $false }    
+        if (!$b) {
             & $pkg.Repository $pkg
+            Update-SessionEnvironment 6> $null
          } else { "Already installed: $($pkg.Name)" }
     }
-
-    Update-SessionEnvironment
 }
 
-# cd D:\work\cir\cir-rest
-# Install-Dependencies -Tags build, test
+# cd c:\Work\_trezor\website\next
+# Install-Dependencies -Tags { develop -and !docs -or basic } -Verbose
