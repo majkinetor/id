@@ -1,4 +1,4 @@
-#requires -version 3
+#requires -version 5
 
 $paths = "Private", "Public"
 foreach ($path in $paths) {
