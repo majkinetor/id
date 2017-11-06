@@ -1,0 +1,1 @@
+ls $PSScriptRoot\*.ps1 | % { . $_ }
