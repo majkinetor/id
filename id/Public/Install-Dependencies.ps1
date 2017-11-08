@@ -64,51 +64,7 @@ function Install-Dependencies {
         [string[]] $Names
     ) 
     
-    function chocolatey( [HashTable] $pkg ) {
-        if (!(gcm choco.exe -ea 0)) { Use-Chocolatey }
 
-        if (!$script:chocolatey_list) { 
-            Write-Verbose 'Get local chocolatey packages'
-            $script:chocolatey_list = choco list --local-only --limit-output
-        }
-        
-        $name = $pkg.Name
-        if ($l = $script:chocolatey_list -match "^$name\|") { "Already installed: $l"; return }
-
-        Write-Host "Installing dependency: $name" -ForegroundColor yellow
-
-        $params = @(
-            'install'
-            '--yes'
-            $name
-            if ( $pkg.Params  ) { '--params',  $pkg.Params  }
-            if ( $pkg.Version ) { '--version', $pkg.Version }  
-            if ( $pkg.Source  ) { '--source',  $pkg.Source  }          
-        ) + $pkg.Options
-
-        
-        Write-Host "choco.exe $params"
-        & choco.exe $params
-        if ($LASTEXITCODE) { throw "Failed to install dependency '$name' - exit code $LastExitCode"}
-    }
-
-    function psgallery( [HashTable] $pkg ) {
-        if (!(Get-PSRepository | ? Name -eq 'PSGallery')) { Use-PSGallery } # Very slow and complains without proxy
-        #if (!(Get-PackageSource PSGallery -ea 0)) { Use-PSGallery }
-        $name = $pkg.Name
-        
-        $local = gmo $name -ListAvailable | select -First 1
-        if ($local) {
-            "Already installed: $name|$($local.Version)"
-            return
-        }
-
-        Write-Host "Installing dependency: $name" -ForegroundColor yellow
-
-        if ($Env:HTTP_PROXY) { $params.Proxy = $Env:HTTP_PROXY } 
-        $params = $pkg.Options
-        Install-Module $name @params 
-    }
 
     function windows( [HashTable] $pkg ) {
         $name = $pkg.Name
