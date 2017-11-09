@@ -1,6 +1,6 @@
 class Chocolatey
 {
-    [string[]] $ChocoArgs = '-d'
+    [string[]] $ChocoArgs
     
     #...
 
@@ -40,13 +40,8 @@ class Chocolatey
         return 'latest'
     }
 
-<#.SYNOPSIS
-    Ensure chocolatey is available.
-
-.DESCRIPTION
-    Installs chocolatey in an idempotent way. 
-    If behind the proxy, set `$env:http_proxy` environment variable.
-#>
+    # Installs chocolatey in an idempotent way. 
+    # If behind the proxy, set $env:http_proxy environment variable.
     InstallChocolatey( [switch] $Latest ) {
         Write-Host "Install Chocolatey" -Foreground yellow
     
@@ -64,8 +59,8 @@ class Chocolatey
     }
 }
 
-$pkg = @{
-    Name = '7z.install'
-}
-$x = new-object Chocolatey 
-$x.Install($pkg)
+# $pkg = @{
+#     Name = '7z.install'
+# }
+# $x = new-object Chocolatey 
+# $x.Install($pkg)
