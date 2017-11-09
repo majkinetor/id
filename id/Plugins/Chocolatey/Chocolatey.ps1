@@ -1,6 +1,6 @@
 class Chocolatey
 {
-    [string[]] $ChocoArgs
+    [string[]] $ChocoArgs = $Env:ID_ChocolateyArgs
     
     #...
 
