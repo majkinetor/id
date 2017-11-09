@@ -1,27 +1,71 @@
-function chocolatey( [HashTable] $pkg ) {
-    if (!(gcm choco.exe -ea 0)) { Use-Chocolatey }
+class Chocolatey
+{
+    [string[]] $ChocoArgs = '-d'
+    
+    #...
 
-    if (!$script:chocolatey_list) { 
-        Write-Verbose 'Get local chocolatey packages'
-        $script:chocolatey_list = choco list --local-only --limit-output
+    [string] $choco_list
+
+    Chocolatey() {
     }
+
+    # Returns version
+    [string] Install([HashTable] $pkg) {
+
+        function init() {
+            if (!(gcm choco.exe -ea 0)) { InstallChocolatey }
+            $this.choco_list = choco list --local-only --limit-output         
+        }
+
+        if (!$this.choco_list) { init }
+        
+        $name = $pkg.Name
+        if ($l = $this.choco_list -match "^$name\|") { return ($l -replace '\|.+') }
+
+        Write-Host "Installing dependency: $name" -ForegroundColor yellow
+
+        $params = @(
+            'install'
+            '--yes'
+            $name
+            if ( $pkg.Params  ) { '--params',  $pkg.Params  }
+            if ( $pkg.Version ) { '--version', $pkg.Version }  
+            if ( $pkg.Source  ) { '--source',  $pkg.Source  }
+            $this.ChocoArgs
+        ) + $pkg.Options
+  
+        Write-Host "choco.exe $params"
+        & choco.exe $params
+        if ($LASTEXITCODE) { throw "Failed to install dependency '$name' - exit code $LastExitCode" }
+        return 'latest'
+    }
+
+<#.SYNOPSIS
+    Ensure chocolatey is available.
+
+.DESCRIPTION
+    Installs chocolatey in an idempotent way. 
+    If behind the proxy, set `$env:http_proxy` environment variable.
+#>
+    InstallChocolatey( [switch] $Latest ) {
+        Write-Host "Install Chocolatey" -Foreground yellow
     
-    $name = $pkg.Name
-    if ($l = $script:chocolatey_list -match "^$name\|") { "Already installed: $l"; return }
-
-    Write-Host "Installing dependency: $name" -ForegroundColor yellow
-
-    $params = @(
-        'install'
-        '--yes'
-        $name
-        if ( $pkg.Params  ) { '--params',  $pkg.Params  }
-        if ( $pkg.Version ) { '--version', $pkg.Version }  
-        if ( $pkg.Source  ) { '--source',  $pkg.Source  }          
-    ) + $pkg.Options
-
+        if (gcm choco.exe -ea 0) { 
+            if ($Latest) { choco.exe upgrade chocolatey } 
+            else { Write-Host 'Chocolatey version:' $(choco.exe --version -r) -Foreground green }
+        } else {
+            iwr https://chocolatey.org/install.ps1 -Proxy $env:http_proxy -UseBasicParsing | iex 
+        }
     
-    Write-Host "choco.exe $params"
-    & choco.exe $params
-    if ($LASTEXITCODE) { throw "Failed to install dependency '$name' - exit code $LastExitCode"}
+        . {
+            choco feature enable -n=allowGlobalConfirmation
+            choco feature enable -n=useRememberedArgumentsForUpgrades
+        } *> $null
+    }
 }
+
+$pkg = @{
+    Name = '7z.install'
+}
+$x = new-object Chocolatey 
+$x.Install($pkg)
