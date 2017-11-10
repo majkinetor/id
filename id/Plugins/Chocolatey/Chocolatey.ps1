@@ -35,7 +35,7 @@ class Chocolatey
         ) + $pkg.Options
   
         Write-Host "choco.exe $params"
-        & choco.exe $params
+        & choco.exe -jjj $params  | Write-Host
         if ($LASTEXITCODE) { throw "Failed to install dependency '$name' - exit code $LastExitCode" }
         return 'latest'
     }
