@@ -1,6 +1,6 @@
 class Chocolatey
 {
-    [string[]] $ChocoArgs = $Env:ID_ChocolateyArgs
+    [string[]] $ExtraArgs = $Env:ID_ChocolateyArgs
     
     #...
 
@@ -31,7 +31,7 @@ class Chocolatey
             if ( $pkg.Params  ) { '--params',  $pkg.Params  }
             if ( $pkg.Version ) { '--version', $pkg.Version }  
             if ( $pkg.Source  ) { '--source',  $pkg.Source  }
-            $this.ChocoArgs
+            $this.ExtraArgs
         ) + $pkg.Options
   
         Write-Host "choco.exe $params"

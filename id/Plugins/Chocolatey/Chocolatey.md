@@ -2,7 +2,7 @@
 
 ## Options
 
-- ChocoArgs - argument list for the choco.exe command line (for example `'-d'`)
+- ExtraArgs - argument list for the choco.exe command line (for example `'-d'`)
 
 ## Package options
 
