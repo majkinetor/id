@@ -4,30 +4,24 @@ class Chocolatey
     
     #...
 
-    [string] $choco_list
+    [string[]] $choco_list
 
-    Chocolatey() {
+    Chocolatey() {}
+
+    # Returns local version of the package.
+    # If package is present but version can't be found return '?'
+    # If package is not present, return ''
+    [string] GetLocalVersion( $pkg ) {
+        if (!$this.choco_list) { $this.choco_list = choco list --local-only --limit-output }
+        if ($l = $this.choco_list -match "^$($pkg.Name)\|") { return ($l -replace '.+?\|') }
+        return ''
     }
 
-    # Returns version
-    [string] Install([HashTable] $pkg) {
-
-        function init() {
-            if (!(gcm choco.exe -ea 0)) { InstallChocolatey }
-            $this.choco_list = choco list --local-only --limit-output         
-        }
-
-        if (!$this.choco_list) { init }
-        
-        $name = $pkg.Name
-        if ($l = $this.choco_list -match "^$name\|") { return ($l -replace '\|.+') }
-
-        Write-Host "Installing dependency: $name" -ForegroundColor yellow
-
+    Install([HashTable] $pkg) {
         $params = @(
             'install'
             '--yes'
-            $name
+            $pkg.Name
             if ( $pkg.Params  ) { '--params',  $pkg.Params  }
             if ( $pkg.Version ) { '--version', $pkg.Version }  
             if ( $pkg.Source  ) { '--source',  $pkg.Source  }
@@ -35,14 +29,14 @@ class Chocolatey
         ) + $pkg.Options
   
         Write-Host "choco.exe $params"
-        & choco.exe -jjj $params  | Write-Host
-        if ($LASTEXITCODE) { throw "Failed to install dependency '$name' - exit code $LastExitCode" }
-        return 'latest'
+        & choco.exe $params *>&1 | Write-Host
+        if ($LastExitCode) { throw "Failed to install dependency - exit code $LastExitCode" }
+        $this.choco_list += choco list -l -r $pkg.Name
     }
 
     # Installs chocolatey in an idempotent way. 
     # If behind the proxy, set $env:http_proxy environment variable.
-    InstallChocolatey( [switch] $Latest ) {
+    InstallRepository( [switch] $Latest ) {
         Write-Host "Install Chocolatey" -Foreground yellow
     
         if (gcm choco.exe -ea 0) { 

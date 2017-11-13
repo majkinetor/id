@@ -8,33 +8,20 @@ class PSGallery
 
     PSGallery() { }
 
+    [string] GetLocalVersion( $pkg ) {
+        $local = gmo $pkg.Name -ListAvailable | select -First 1
+        return $local.Version
+    }
+
     # Returns version
-    [string] Install([HashTable] $pkg) {
-        function init() {
-            #if (!(Get-PackageSource PSGallery -ea 0)) { InstallPSGallery } #faster, not sure if works always
-            if (!(Get-PSRepository | ? Name -eq 'PSGallery')) { # Very slow and complains without proxy
-                 InstallPSGallery 
-            }
-            $this.init = $true
-        }
-
-        if (!$this.init) { init }
-
-        $name = $pkg.Name
-        
-        $local = gmo $name -ListAvailable | select -First 1
-        if ($local) { return $local.Version }
-    
-        Write-Host "Installing dependency: $name" -ForegroundColor yellow
-    
+    Install([HashTable] $pkg) {
         $params = if ($pkg.Options) { $pkg.Options } else { @{} }
         if ($Env:HTTP_PROXY) { $params.Proxy = $Env:HTTP_PROXY }
-        Install-Module $name @params
-        return ''
+        Install-Module $pkg.Name @params
     }
 
     # Installs PSGallery if it doesn't exist and sets it to trusted repository
-    InstallPSGallery() {    
+    InstallRepository() {    
         function repo { Get-PSRepository | ? Name -eq 'PSGallery' } # Using -Name parameter is VERY slow. Without IE proxy gives warnings
         #function repo { Get-PackageSource PSGallery }
 
@@ -45,8 +32,7 @@ class PSGallery
             Write-Host 'Using proxy:' $env:http_proxy
             $proxy.Proxy = $env:http_proxy 
         } else { Write-Host 'Not using proxy'}
-        
-        
+             
         if (!(repo)) { 
             if (!(Get-PackageProvider Nuget -ea 0)) { Install-PackageProvider NuGet -MinimumVersion 2.8.5.201 -Force @proxy }
             Register-PSRepository -Default @proxy  
@@ -63,8 +49,8 @@ class PSGallery
     }
 }
 
-$pkg = @{
-    Name = 'invoke-build'
-}
-$x = new-object PSGallery 
-$x.Install($pkg)
+# $pkg = @{
+#     Name = 'invoke-build'
+# }
+# $x = new-object PSGallery 
+# $x.Install($pkg)
