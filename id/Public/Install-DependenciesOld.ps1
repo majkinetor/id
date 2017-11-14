@@ -152,24 +152,6 @@ function Install-Dependencies {
         code --install-extension $name
     }
 
-    function is_tagged( $Pkg ) {
-        if ($Tags -is [array] -or $Tags -is [string]) {
-            if ($Tags -and !(Compare-Object $Pkg.Tags $Tags -IncludeEqual | ? SideIndicator -eq '==')) { return $false }
-            return $true
-        }
-        
-        if ($Tags -is [ScriptBlock]) {     
-            if (!$script:Tag_Expression) {
-                $script:Tag_Expression = $Tags
-                $Tags -split '\(|\)| |!' | ? {$_} | % { if (!$_.StartsWith('-')) {  
-                    $script:Tag_Expression = $script:Tag_Expression -replace "\b$_\b", "`$t_$_" } 
-                }
-            }
-            $Pkg.Tags | % { Set-Variable "t_$_" $true }
-            return iex $script:Tag_Expression
-        }
-    }
-
     $repos = 'Chocolatey', 'PSGallery', 'Windows', 'Script', 'RubyGems', 'Pip', 'VsCode'
     $script:chocolatey_list = $script:pip_list = $script:vscode_list = $script:Tag_Expression = $null
     
