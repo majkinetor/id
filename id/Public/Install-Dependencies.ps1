@@ -15,18 +15,16 @@ function Install-Dependencies {
     )
 
     $pm = [PackageManager]::new( $Packages )
-    $pm.Install() 
+    $pm.Tags  = $Tags
+    $pm.Names = $Names
     
-    Write-Host "Requesting installation of" ("{0}/{1}" -f $filtered_packages.Keys.Count, $Packages.Keys.Count) "dependencies:" -ForegroundColor green
+    $selected = $pm.SelectPackages()
+    Write-Host "Selecting" ("{0} of {1}" -f $selected.Keys.Count, $pm.Packages.Keys.Count) "dependencies" -ForegroundColor green
     if ($Env:HTTP_PROXY) {  Write-Host  "Proxy:" $Env:HTTP_PROXY -ForegroundColor green }
-    Write-Host "Tags: $Tags    Packages: $($filtered_packages.Keys)`n" -ForegroundColor green
-    
-    foreach( $pkg in $filtered_packages.GetEnumerator() ) { 
-        $pkg = $pkg.Value 
-        $b = if ( $pkg.Test ) { $pkg.Test | iex } else { $false }    
-        if (!$b) {
-            & $pkg.Repository $pkg
-            Update-SessionEnvironment 6> $null
-         } else { "Already installed: $($pkg.Name)" }
-    }
+    Write-Host "  Tags:      $Tags" -ForegroundColor green
+    Write-Host "  Packages:  $($selected.Keys)" -ForegroundColor green
+    Write-Host
+
+    $pm.Install() 
+    # $b = if ( $pkg.Test ) { $pkg.Test | iex } else { $false }
 }

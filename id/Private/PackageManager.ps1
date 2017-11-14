@@ -33,6 +33,7 @@ class PackageManager {
 
             Write-Host "Installing dependency:" $pkg.Name -ForegroundColor yellow
             $repo.Install( $pkg )
+            Update-SessionEnvironment 6> $null
         }
     }
 
