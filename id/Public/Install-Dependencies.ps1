@@ -1,7 +1,9 @@
 function Install-Dependencies {
     param(
-        # Package description
-        [System.Collections.Specialized.OrderedDictionary] $Packages,
+        # Package description:
+        #   [string]  - path to ps1 files with packages
+        #   [ordered] - ordered hashtable with packages
+        $Packages = 'packages.ps1',
         
         # String[] or ScriptBlock
         #  - String[]:      Install only packages that contain at least 1 of the tags in the list
@@ -10,10 +12,9 @@ function Install-Dependencies {
 
         # Install only packages that match provided names
         [string[]] $Names 
-    ) 
+    )
 
-   
-    $pm = [PackageManager]::new( '..\..\test\packages.ps1' )
+    $pm = [PackageManager]::new( $Packages )
     $pm.Install() 
     
     Write-Host "Requesting installation of" ("{0}/{1}" -f $filtered_packages.Keys.Count, $Packages.Keys.Count) "dependencies:" -ForegroundColor green
@@ -29,9 +30,3 @@ function Install-Dependencies {
          } else { "Already installed: $($pkg.Name)" }
     }
 }
-
-
-
-}
-
-

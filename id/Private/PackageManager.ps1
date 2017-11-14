@@ -1,6 +1,6 @@
 class PackageManager {
     [System.Collections.Specialized.OrderedDictionary] $Packages
-    [string]    $PackagesPath = "$pwd\packages.ps1"
+    [string]    $PackagesPath
     [HashTable] $Plugins = @{}
     [Object]    $Tags
     [String[]]  $Names
@@ -86,7 +86,3 @@ class PackageManager {
         }
     }
 }
-
-$pm = [PackageManager]::new( '..\..\test\packages.ps1' )
-$pm.Tags = { build -and !develop }
-$pm.Install()
