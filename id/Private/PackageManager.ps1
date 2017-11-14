@@ -21,7 +21,7 @@ class PackageManager {
     Install() {
         $this.load_plugins()
         $selectedPackages = $this.SelectPackages()
-        foreach ($package in $selectedPackages) {
+        foreach ($package in $selectedPackages.GetEnumerator()) {
             $pkg = $package.Value
             if (!$pkg.Name) { $pkg.Name = $package.Key }
             if (!$pkg.Repo) { throw 'Repo not specified' }
@@ -35,13 +35,13 @@ class PackageManager {
             $repo.Install( $pkg )
         }
     }
-    
-    hidden [System.Collections.Specialized.OrderedDictionary] SelectPackages() {
+
+    [System.Collections.Specialized.OrderedDictionary] SelectPackages() {
         $res = [ordered]@{}
         foreach ($package in $this.Packages.GetEnumerator()) {
             $pkg = $package.Value
-            if ( !$this.IsTagged($pkg) ) { Write-Verbose "Tag exlusion: $($pkg.Name)"; continue }
-            if ( !$this.IsNamed($package.Key) ) { Write-Verbose "Name exlusion: $($pkg.Name)"; continue }
+            if ( !$this.IsTagged($pkg) ) { Write-Verbose "Tag exlusion: $($package.Key)"; continue }
+            if ( !$this.IsNamed($package.Key) ) { Write-Verbose "Name exlusion: $($package.Key)"; continue }
 
             $res[$package.Key] = $pkg
         }
