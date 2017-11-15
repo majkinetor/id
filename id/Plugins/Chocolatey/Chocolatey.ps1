@@ -4,7 +4,7 @@ class Chocolatey
     
     #...
 
-    [string[]] $choco_list
+    hidden [string[]] $choco_list
 
     Chocolatey() {}
 
@@ -15,6 +15,10 @@ class Chocolatey
         if (!$this.choco_list) { $this.choco_list = choco list --local-only --limit-output }
         if ($l = $this.choco_list -match "^$($pkg.Name)\|") { return ($l -replace '.+?\|') }
         return ''
+    }
+
+    Init() {
+        if (!( gcm choco.exe -ea 0)) { $this.InstallRepository() }
     }
 
     Install([HashTable] $pkg) {
@@ -37,7 +41,7 @@ class Chocolatey
     # Installs chocolatey in an idempotent way. 
     # If behind the proxy, set $env:http_proxy environment variable.
     InstallRepository( [switch] $Latest ) {
-        Write-Host "Install Chocolatey" -Foreground yellow
+        Write-Host "Installing repository: Chocolatey" -Foreground yellow
     
         if (gcm choco.exe -ea 0) { 
             if ($Latest) { choco.exe upgrade chocolatey } 

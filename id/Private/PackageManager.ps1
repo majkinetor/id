@@ -6,6 +6,7 @@ class PackageManager {
     [String[]]  $Names
 
     hidden [string] $tag_expression
+    hidden [HashTable] $init = @{}
 
     PackageManager( [string] $Path ) {
         if (Test-Path $Path) { $Path = Resolve-Path $Path}
@@ -19,18 +20,21 @@ class PackageManager {
     }
 
     Install() {
-        $this.load_plugins()
         $selectedPackages = $this.SelectPackages()
         foreach ($package in $selectedPackages.GetEnumerator()) {
             $pkg = $package.Value
             if (!$pkg.Name) { $pkg.Name = $package.Key }
-            if (!$pkg.Repo) { throw 'Repo not specified' }
 
-            if ( !$this.Plugins[$pkg.Repo] ) { throw 'Invalid repo' }
+            if (!$pkg.Repo) { throw 'Repo not specified' }
+            if (!$this.Plugins[$pkg.Repo]) { $this.Plugins[$pkg.Repo] = $this.load_plugin( $pkg.Repo ) }
+
             $repo = $this.Plugins[ $pkg.Repo ]
+            $repo_name = $repo.GetType().Name
+
+            if (!$this.init.$repo_name) { if ($repo.Init) { $repo.Init(); } $this.init.$repo_name = $true }
 
             if ($v=$repo.GetLocalVersion($pkg)) { Write-Host "Already installed: $($pkg.Name) | $v"; continue }
-
+        
             Write-Host "Installing dependency:" $pkg.Name -ForegroundColor yellow
             $repo.Install( $pkg )
             Update-SessionEnvironment 6> $null
@@ -79,11 +83,11 @@ class PackageManager {
         return $false
     }
 
-    hidden load_plugins() {
-        ls $PSScriptRoot\..\Plugins -Directory | ? Name -notlike '_*' | % { 
-            Write-Verbose "Loading plugin $($_.Name)"
-            . ('{0}\{1}.ps1' -f $_.FullName, $_.Name)
-            $this.Plugins[$_.Name] = new-object $_
-        }
+    hidden [Object] load_plugin( $Name ) {
+        Write-Verbose "Loading plugin $Name"
+        $plugin_root = Resolve-Path $PSScriptRoot\..\Plugins
+        if (!(Test-Path $plugin_root\$name\$name.ps1)) { throw "Plugin not found: $Name" } 
+        . ('{1}\{0}\{0}.ps1' -f $Name, $plugin_root)
+        return new-object $Name
     }
 }
