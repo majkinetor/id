@@ -48,9 +48,3 @@ class PSGallery
         @("Repository info:`n") + ($repo | % { "  $_" }) | Write-Host
     }
 }
-
-# $pkg = @{
-#     Name = 'invoke-build'
-# }
-# $x = new-object PSGallery 
-# $x.Install($pkg)

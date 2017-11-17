@@ -56,9 +56,3 @@ class Chocolatey
         } *> $null
     }
 }
-
-# $pkg = @{
-#     Name = '7z.install'
-# }
-# $x = new-object Chocolatey 
-# $x.Install($pkg)
