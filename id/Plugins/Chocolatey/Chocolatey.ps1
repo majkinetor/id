@@ -1,6 +1,6 @@
 class Chocolatey
 {
-    [string[]] $ExtraArgs = $Env:ID_ChocolateyArgs
+    [string[]] $ExtraArgs = $Env:ID_Chocolatey_ExtraArgs
     
     #...
 
@@ -18,7 +18,7 @@ class Chocolatey
     }
 
     Init() {
-        if (!( gcm choco.exe -ea 0)) { $this.InstallRepository() }
+        if (!( gcm choco.exe -ea 0)) { [Chocolatey]::InstallRepository() }
     }
 
     Install([HashTable] $pkg) {
@@ -40,7 +40,7 @@ class Chocolatey
 
     # Installs chocolatey in an idempotent way. 
     # If behind the proxy, set $env:http_proxy environment variable.
-    InstallRepository( [switch] $Latest ) {
+    static InstallRepository( [switch] $Latest ) {
         Write-Host "Installing repository: Chocolatey" -Foreground yellow
     
         if (gcm choco.exe -ea 0) { 

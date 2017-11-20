@@ -26,7 +26,7 @@ class PackageManager {
             if (!$pkg.Name) { $pkg.Name = $package.Key }
 
             if (!$pkg.Repo) { throw 'Repo not specified' }
-            if (!$this.Plugins[$pkg.Repo]) { $this.Plugins[$pkg.Repo] = $this.load_plugin( $pkg.Repo ) }
+            if (!$this.Plugins[$pkg.Repo]) { $this.Plugins[$pkg.Repo] = [PackageManager]::LoadPlugin( $pkg.Repo ) }
 
             $repo = $this.Plugins[ $pkg.Repo ]
             $repo_name = $repo.GetType().Name
@@ -83,10 +83,10 @@ class PackageManager {
         return $false
     }
 
-    hidden [Object] load_plugin( $Name ) {
+    static [Object] LoadPlugin( $Name ) {
         Write-Verbose "Loading plugin $Name"
         $plugin_root = Resolve-Path $PSScriptRoot\..\Plugins
-        if (!(Test-Path $plugin_root\$name\$name.ps1)) { throw "Plugin not found: $Name" } 
+        if (!(Test-Path $plugin_root\$Name\$Name.ps1)) { throw "Plugin not found: $Name" } 
         . ('{1}\{0}\{0}.ps1' -f $Name, $plugin_root)
         return new-object $Name
     }
