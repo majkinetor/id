@@ -1,6 +1,6 @@
 class PSGallery
 {
-    [string[]] $ExtraArgs = @{}
+    [HashTable] $ExtraArgs = @{}
     
     #...
 
@@ -16,6 +16,7 @@ class PSGallery
     # Returns version
     Install([HashTable] $pkg) {
         $params = if ($pkg.Options) { $pkg.Options } else { @{} }
+        $params += $ExtraArgs
         if ($Env:HTTP_PROXY) { $params.Proxy = $Env:HTTP_PROXY }
         Install-Module $pkg.Name @params
     }

@@ -7,9 +7,9 @@ class Script {
         return ''   
     }
 
-    Install( [HashTable] $pkg ) {
+    [Object] Install( [HashTable] $pkg ) {
         if ( $pkg.Script -isnot [ScriptBlock] ) { $pkg.Script = [ScriptBlock]::Create($pkg.Script) }
         $options = $pkg.Options
-        & $pkg.Script @options *>&1 | Write-Host
+        return (& $pkg.Script @options)
     }
 }
