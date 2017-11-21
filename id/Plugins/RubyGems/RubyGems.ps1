@@ -8,7 +8,7 @@ class RubyGems {
         return ( (gem.cmd list -e $pkg.Name) -split "`n" | select -Last 1 )
     }
 
-    [Object] Install( [HashTable] $pkg ) {
+    Install( [HashTable] $pkg ) {
         $params = @(
             'install'
             $pkg.Name

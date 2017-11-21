@@ -8,6 +8,10 @@ class Chocolatey
 
     Chocolatey() {}
 
+    Init() {
+        if (!( gcm choco.exe -ea 0)) { [Chocolatey]::InstallRepository() }
+    }
+
     # Returns local version of the package.
     # If package is present but version can't be found return '?'
     # If package is not present, return ''
@@ -15,10 +19,6 @@ class Chocolatey
         if (!$this.choco_list) { $this.choco_list = choco list --local-only --limit-output }
         if ($l = $this.choco_list -match "^$($pkg.Name)\|") { return ($l -replace '.+?\|') }
         return ''
-    }
-
-    Init() {
-        if (!( gcm choco.exe -ea 0)) { [Chocolatey]::InstallRepository() }
     }
 
     Install([HashTable] $pkg) {

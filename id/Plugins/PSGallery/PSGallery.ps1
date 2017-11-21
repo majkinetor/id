@@ -22,11 +22,11 @@ class PSGallery
     }
 
     Init() {
-        if ( !$this.psrepo() ) { [PSGallery]::InstallRepository() }
+        if ( ![PSGallery]::psrepo()  ) { [PSGallery]::InstallRepository() }
     }
 
-    hidden [bool] psrepo() {
-        Get-PSRepository | ? Name -eq 'PSGallery'  # Using -Name parameter is VERY slow. Without IE proxy gives warnings
+    hidden static [object] psrepo() {
+        return Get-PSRepository | ? Name -eq 'PSGallery'  # Using -Name parameter is VERY slow. Without IE proxy gives warnings
         #Get-PackageSource PSGallery 
     }
 
@@ -49,7 +49,7 @@ class PSGallery
         #     Set-PSRepository -Name PSGallery -InstallationPolicy Trusted @proxy    
         # }
 
-        $repo = ( $this.psrepo() | select SourceLocation, Trusted | fl * | Out-String).Trim() -split "`n" 
+        $repo = ( [PSGallery]::psrepo() | select SourceLocation, Trusted | fl * | Out-String).Trim() -split "`n" 
         @("Repository info:`n") + ($repo | % { "  $_" }) | Write-Host
     }
 }
